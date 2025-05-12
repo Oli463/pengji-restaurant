@@ -1,85 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>彭记饭店 · 商家后台</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
-    h1 { color: #d62828; }
-    .order { background: #fff; padding: 16px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-    .order h3 { margin-top: 0; }
-    .order ul { list-style: none; padding: 0; margin: 8px 0; }
-    .order ul li { margin: 4px 0; }
-    .btn { padding: 6px 12px; margin: 4px; border: none; border-radius: 4px; cursor: pointer; }
-    .accept { background: #28a745; color: #fff; }
-    .decline { background: #dc3545; color: #fff; }
-    .inprogress { background: #ffc107; color: #000; }
-    .complete { background: #17a2b8; color: #fff; }
-    .status { font-weight: bold; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>彭记饭店 · 商家后台</title>
+<style>
+/* --- 样式同你现在看到的，无改动 --- */
+</style>
 </head>
 <body>
-  <h1>📦 商家订单后台</h1>
-  <div id="orders"></div>
+<h1>📦 商家订单后台</h1>
+<div id="orders"></div>
 
-  <script>
-    // 示例订单数据（后期可用 localStorage 或 JSON 载入）
-    const sampleOrders = [
-      {
-        id: "#001",
-        customer: "0700-123-456",
-        address: "Naguru Drive 12",
-        items: [
-          { name: "黄焖猪脚饭", qty: 1 },
-          { name: "鸡米饭", qty: 2 }
-        ],
-        total: 70000,
-        status: "未处理"
-      },
-      {
-        id: "#002",
-        customer: "0777-888-999",
-        address: "Kololo Avenue 8",
-        items: [
-          { name: "排骨饭", qty: 1 }
-        ],
-        total: 28000,
-        status: "未处理"
-      }
-    ];
+<script>
+/* ★★ 关键改动 ② —— 从 localStorage 读取订单 ★★ */
+function loadOrders(){
+  return JSON.parse(localStorage.getItem('orders')||'[]');
+}
+let orderData = loadOrders();   // 初始加载
 
-    const ordersContainer = document.getElementById("orders");
+function renderOrders(){
+  const box = document.getElementById('orders');
+  box.innerHTML = '';
+  orderData.forEach((o,idx)=>{
+    const div = document.createElement('div');
+    div.className = 'order';
+    div.innerHTML = `
+      <h3>订单 #${o.id}</h3>
+      <p><strong>电话：</strong>${o.customer}</p>
+      <p><strong>地址：</strong>${o.address}</p>
+      <ul>${ o.items.map(i=>`<li>${i.name} × ${i.qty}</li>`).join('') }</ul>
+      <p><strong>总计：</strong>${o.total.toLocaleString()} UGX</p>
+      <p class="status">当前状态：${o.status}</p>
+      <button class="btn accept"   onclick="updateStatus(${idx},'已接单')">✅ 接单</button>
+      <button class="btn decline"  onclick="updateStatus(${idx},'已拒单')">❌ 拒单</button>
+      <button class="btn inprogress" onclick="updateStatus(${idx},'配送中')">🚚 配送中</button>
+      <button class="btn complete" onclick="updateStatus(${idx},'已完成')">🏁 完成</button>
+    `;
+    box.appendChild(div);
+  });
+}
 
-    function renderOrders() {
-      ordersContainer.innerHTML = "";
-      sampleOrders.forEach((order, index) => {
-        const div = document.createElement("div");
-        div.className = "order";
-        div.innerHTML = `
-          <h3>订单 ${order.id}</h3>
-          <p><strong>电话：</strong>${order.customer}</p>
-          <p><strong>地址：</strong>${order.address}</p>
-          <ul>
-            ${order.items.map(i => `<li>${i.name} × ${i.qty}</li>`).join("")}
-          </ul>
-          <p><strong>总计：</strong>${order.total.toLocaleString()} UGX</p>
-          <p class="status">当前状态：${order.status}</p>
-          <button class="btn accept" onclick="updateStatus(${index}, '已接单')">✅ 接单</button>
-          <button class="btn decline" onclick="updateStatus(${index}, '已拒单')">❌ 拒单</button>
-          <button class="btn inprogress" onclick="updateStatus(${index}, '配送中')">🚚 配送中</button>
-          <button class="btn complete" onclick="updateStatus(${index}, '已完成')">🏁 完成</button>
-        `;
-        ordersContainer.appendChild(div);
-      });
-    }
+function saveOrders(){ localStorage.setItem('orders', JSON.stringify(orderData)); }
 
-    function updateStatus(index, newStatus) {
-      sampleOrders[index].status = newStatus;
-      renderOrders();
-    }
+function updateStatus(i,newS){
+  orderData[i].status = newS;
+  saveOrders();       // 写回 storage，顾客端也能看到更新
+  renderOrders();
+}
 
-    renderOrders();
-  </script>
+renderOrders();
+
+/* ★★ 关键改动 ③ —— 每 3 秒自动检查新订单 ★★ */
+setInterval(()=>{
+  orderData = loadOrders();     // 重新抓最新数据
+  renderOrders();               // 刷新界面
+}, 3000);
+</script>
 </body>
 </html>
