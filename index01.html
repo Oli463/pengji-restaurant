@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>彭记饭店 · 点餐原型</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans",sans-serif}
+body{background:#fafafa;color:#333}
+header{padding:16px;background:#d62828;color:#fff;text-align:center;font-weight:600;font-size:1.25rem;position:sticky;top:0}
+nav{position:fixed;bottom:0;left:0;right:0;height:56px;background:#fff;border-top:1px solid #ddd;display:flex}
+nav button{flex:1;border:none;background:none;font-size:.9rem;color:#666}
+nav button.active{color:#d62828;font-weight:600}
+main{padding:72px 16px 80px 16px;max-width:600px;margin:auto}
+.page{display:none}.page.active{display:block}
+.dish{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:8px;border-radius:8px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.dish h4{font-size:1rem;margin-bottom:4px}.dish span{font-size:.85rem;color:#d62828;font-weight:600}
+.add-btn{padding:4px 8px;border:1px solid #d62828;background:#fff;color:#d62828;border-radius:4px;font-size:.85rem;cursor:pointer}
+#cartBtn{position:fixed;bottom:70px;right:16px;padding:10px 16px;background:#d62828;color:#fff;border:none;border-radius:24px;font-size:.9rem;display:none}
+table{width:100%;border-collapse:collapse;margin:16px 0}
+th,td{border-bottom:1px solid #e0e0e0;padding:8px;text-align:left;font-size:.9rem}tfoot td{font-weight:600}
+.pay-btn{width:100%;padding:12px 0;background:#d62828;color:#fff;font-size:1rem;border:none;border-radius:6px;cursor:pointer;margin-top:12px}
+.notice{background:#fff5e6;border-left:4px solid #ffa502;padding:12px;font-size:.9rem;margin-top:16px}
+</style>
+</head>
+<body>
+<header id="headerTitle">彭记饭店</header>
+<main>
+  <!-- 首页 -->
+  <section id="homePage" class="page active">
+    <h2 style="margin-bottom:12px;">🔥 今日招牌</h2>
+    <div class="dish"><div><h4>私房黄焖猪脚饭</h4><span>20,000 UGX</span></div><button class="add-btn" data-id="0">加入</button></div>
+    <div class="dish"><div><h4>精炖黄焖鸡米饭</h4><span>25,000 UGX</span></div><button class="add-btn" data-id="1">加入</button></div>
+    <div class="dish"><div><h4>秘制黄焖排骨饭</h4><span>28,000 UGX</span></div><button class="add-btn" data-id="2">加入</button></div>
+  </section>
+
+  <!-- 菜单页 -->
+  <section id="menuPage" class="page">
+    <h2 style="margin-bottom:12px;">全部菜品</h2>
+    <div id="menuList"></div>
+  </section>
+
+  <!-- 购物车 -->
+  <section id="cartPage" class="page">
+    <h2 style="margin-bottom:12px;">购物车</h2>
+    <div id="cartTableWrap"></div>
+    <button class="pay-btn" id="checkoutBtn" disabled>去结算</button>
+  </section>
+
+  <!-- 结算 -->
+  <section id="checkoutPage" class="page">
+    <h2 style="margin-bottom:12px;">确认订单</h2>
+    <label>电话<br><input id="phoneInput" type="tel" style="width:100%;padding:8px;margin:4px 0 12px 0"></label>
+    <label>地址<br><input id="addrInput" type="text" style="width:100%;padding:8px;margin:4px 0 12px 0"></label>
+    <div id="checkoutList"></div>
+    <button class="pay-btn" id="submitOrderBtn">确认下单</button>
+  </section>
+
+  <!-- 支付指引 -->
+  <section id="payPage" class="page">
+    <h2 style="margin-bottom:12px;">支付指引</h2>
+    <p>订单金额：<strong id="payAmount">0 UGX</strong></p>
+    <p>MoMo 收款号码：<strong>077 123 4567</strong></p>
+    <div class="notice">安卓点击下方按钮自动拨号；iPhone 已复制指令，请粘贴拨号。</div>
+    <button class="pay-btn" id="ussdBtn">*165*3*0771234567*0#</button>
+  </section>
+</main>
+
+<button id="cartBtn">0 UGX →</button>
+
+<nav>
+  <button data-tab="home" class="active">首页</button>
+  <button data-tab="menu">菜单</button>
+  <button data-tab="cart">购物车</button>
+  <button data-tab="checkout">我的</button>
+</nav>
+
+<script>
+// 菜品数据
+const dishes=[
+  {id:0,name:"私房黄焖猪脚饭",price:20000},
+  {id:1,name:"精炖黄焖鸡米饭",price:25000},
+  {id:2,name:"秘制黄焖排骨饭",price:28000}
+];
+const cart={};
+
+// DOM
+const menuList=document.getElementById("menuList");
+const cartBtn=document.getElementById("cartBtn");
+const cartTableWrap=document.getElementById("cartTableWrap");
+const checkoutBtn=document.getElementById("checkoutBtn");
+const checkoutList=document.getElementById("checkoutList");
+const payAmount=document.getElementById("payAmount");
+const ussdBtn=document.getElementById("ussdBtn");
+
+// 渲染菜单
+function renderMenu(){
+  menuList.innerHTML="";
+  dishes.forEach(d=>{
+    menuList.insertAdjacentHTML("beforeend",
+    `<div class="dish">
+       <div><h4>${d.name}</h4><span>${d.price.toLocaleString()} UGX</span></div>
+       <button class="add-btn" data-id="${d.id}">加入</button>
+     </div>`);
+  });
+}
+renderMenu();
+
+// 添加购物车
+function addToCart(id){
+  cart[id]=(cart[id]||0)+1;
+  updateCartBtn();
+}
+
+// 更新悬浮购物车按钮
+function updateCartBtn(){
+  const total=Object.entries(cart)
+              .reduce((s,[id,qty])=>s+qty*dishes[id].price,0);
+  cartBtn.style.display=total? "block":"none";
+  cartBtn.textContent=`${total.toLocaleString()} UGX →`;
+}
+
+// 购物车表
+function renderCartTable(){
+  let t=0,html=`<table><thead><tr><th>菜品</th><th>数量</th><th>金额</th></tr></thead><tbody>`;
+  Object.entries(cart).forEach(([id,qty])=>{
+    const p=dishes[id].price; t+=p*qty;
+    html+=`<tr><td>${dishes[id].name}</td><td>${qty}</td><td>${(p*qty).toLocaleString()} UGX</td></tr>`;
+  });
+  html+=`</tbody><tfoot><tr><td colspan="2">合计</td><td>${t.toLocaleString()} UGX</td></tr></tfoot></table>`;
+  cartTableWrap.innerHTML=html;
+  checkoutBtn.disabled=!t;
+}
+
+// 结算清单
+function renderCheckout(){
+  let t=0,html="<ul style='list-style:none'>";
+  Object.entries(cart).forEach(([id,qty])=>{
+    const p=dishes[id].price; t+=p*qty;
+    html+=`<li>${dishes[id].name} ×${qty} – ${(p*qty).toLocaleString()} UGX</li>`;
+  });
+  html+=`</ul><p style='margin-top:8px;font-weight:600'>总计：${t.toLocaleString()} UGX</p>`;
+  checkoutList.innerHTML=html;
+}
+
+// 页面切换
+const pages={home:"homePage",menu:"menuPage",cart:"cartPage",checkout:"checkoutPage",pay:"payPage"};
+function show(tab){
+  Object.values(pages).forEach(id=>document.getElementById(id).classList.remove("active"));
+  document.getElementById(pages[tab]).classList.add("active");
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+  if(tab==="cart") renderCartTable();
+  if(tab==="checkout") renderCheckout();
+}
+
+// 事件绑定
+menuList.addEventListener("click",e=>{
+  if(e.target.classList.contains("add-btn")) addToCart(e.target.dataset.id);
+});
+cartBtn.onclick=()=>show("cart");
+checkoutBtn.onclick=()=>show("checkout");
+
+// ★★ 写入订单 + 原支付逻辑
+const submitOrderBtn=document.getElementById("submitOrderBtn");
+submitOrderBtn.onclick=()=>{
+  const total=Object.entries(cart).reduce((s,[id,qty])=>s+qty*dishes[id].price,0);
+
+  const newOrder={
+    id:Date.now(),
+    customer:document.getElementById('phoneInput').value,
+    address :document.getElementById('addrInput').value,
+    items   :Object.entries(cart).map(([id,qty])=>({name:dishes[id].name,qty:+qty})),
+    total,
+    status:"未处理"
+  };
+  const all=JSON.parse(localStorage.getItem('orders')||'[]');
+  all.push(newOrder);
+  localStorage.setItem('orders',JSON.stringify(all));
+
+  payAmount.textContent=total.toLocaleString()+" UGX";
+  ussdBtn.textContent=`*165*3*0771234567*${total}#`;
+  navigator.clipboard.writeText(ussdBtn.textContent).catch(()=>{});
+  show("pay");
+};
+
+// USSD 按钮
+ussdBtn.onclick=()=>window.location.href="tel:"+ussdBtn.textContent;
+</script>
+</body></html>
