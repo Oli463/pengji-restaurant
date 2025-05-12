@@ -159,6 +159,11 @@ menuList.addEventListener("click",e=>{
 });
 cartBtn.onclick=()=>show("cart");
 checkoutBtn.onclick=()=>show("checkout");
+  /* === 底部导航按钮 === */
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.onclick = ()=> show(btn.dataset.tab);   // 关键绑定
+});
+
 
 // ★★ 写入订单 + 原支付逻辑
 const submitOrderBtn=document.getElementById("submitOrderBtn");
